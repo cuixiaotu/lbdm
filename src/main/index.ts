@@ -28,8 +28,10 @@ async function createMainWindow(): Promise<void> {
   console.log('[Main] Creating main window...')
   console.log('[Main] is.dev:', is.dev)
   console.log('[Main] ELECTRON_RENDERER_URL:', process.env['ELECTRON_RENDERER_URL'])
+  console.log("NODE_MODULE_VERSION:", process.versions.modules);
 
-  const mainWindowInstance = await windowManager.create({
+
+    const mainWindowInstance = await windowManager.create({
     type: WindowType.MAIN,
     singleton: true, // 确保只有一个主窗口
     width: 1200,
