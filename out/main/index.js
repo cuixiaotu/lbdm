@@ -7,12 +7,12 @@ const os = require("os");
 const fs = require("fs");
 const Database = require("better-sqlite3-multiple-ciphers");
 const axios = require("axios");
+const dayjs = require("dayjs");
 const mysql = require("mysql2/promise");
 const ssh2 = require("ssh2");
 const net = require("net");
 const crypto = require("crypto");
 const events = require("events");
-const dayjs = require("dayjs");
 const main = require("electron/main");
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
@@ -1061,6 +1061,46 @@ class ApiService {
     return response;
   }
   /**
+   * 获取有权限的抖音列表
+   * @param groupId 组织ID
+   * @param requestData 请求参数
+   * @param config API请求配置
+   */
+  async getAwemeList(requestData, config) {
+    const url = `/bp/api/analysis/operate/get_aweme_list`;
+    const headers = this.buildHeaders(
+      config.cookie,
+      config.csrfToken,
+      `https://business.oceanengine.com/site/analysis/scenes/live`
+    );
+    const response = await this.makeRequest(
+      "POST",
+      url,
+      headers,
+      requestData,
+      config.timeout
+    );
+    await this.validateResponse(response, config);
+    return response;
+  }
+  async getLiveRoomList(requestData, config) {
+    const url = `/bp/api/analysis/operate/get_room_list`;
+    const headers = this.buildHeaders(
+      config.cookie,
+      config.csrfToken,
+      `https://business.oceanengine.com/site/analysis/scenes/live`
+    );
+    const response = await this.makeRequest(
+      "POST",
+      url,
+      headers,
+      requestData,
+      config.timeout
+    );
+    await this.validateResponse(response, config);
+    return response;
+  }
+  /**
    * 获取直播间在线人数
    * @param requestData 请求参数
    * @param config API请求配置
@@ -1292,6 +1332,159 @@ class LiveRoomService {
       }
       console.log(
         `[LiveRoomService] Account ${accountId} success: ${liveData.list.length} live rooms, ${liveData.overview.line_online_count} online`
+      );
+      return {
+        accountId,
+        accountName,
+        organizationId,
+        liveData,
+        lastUpdate: Date.now(),
+        success: true
+      };
+    } catch (error) {
+      console.error(`[LiveRoomService] Account ${accountId} exception:`, error);
+      return {
+        accountId,
+        accountName,
+        organizationId,
+        liveData: null,
+        lastUpdate: Date.now(),
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  /**
+   * 获取单个账户的直播间列表
+   */
+  async fetchAccountLiveRoomsV2(accountId, accountName, organizationId, cookie, csrfToken) {
+    try {
+      console.log(
+        `[LiveRoomService] Fetching live roomsV2 for account ${accountId} (${accountName})`
+      );
+      const awemeResp = await apiService.getAwemeList(
+        void 0,
+        {
+          cookie,
+          csrfToken,
+          groupId: organizationId,
+          accountId
+        }
+      );
+      if (awemeResp.code !== 0) {
+        await this.handleApiFailure(accountId, accountName, awemeResp.code);
+        return {
+          accountId,
+          accountName,
+          organizationId,
+          liveData: null,
+          lastUpdate: Date.now(),
+          success: false,
+          error: awemeResp.msg
+        };
+      }
+      const awemeData = awemeResp.data;
+      if (!awemeData || !awemeData.list?.length) {
+        return {
+          accountId,
+          accountName,
+          organizationId,
+          liveData: null,
+          lastUpdate: Date.now(),
+          success: false,
+          error: "No aweme data"
+        };
+      }
+      const liveData = {
+        list: [],
+        overview: {
+          line_online_count: 0,
+          promotion_count: 0,
+          cumulative_views_count: 0,
+          avg_views_count: 0
+        },
+        ies_count: 0,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0
+        }
+      };
+      const userIds = awemeData.list.map((item) => item.userId).filter(Boolean);
+      const BATCH_SIZE = 10;
+      const startTime = (/* @__PURE__ */ new Date()).toLocaleDateString("zh-CN").replace(/\//g, "-");
+      const endTime = startTime;
+      for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+        const batchAnchorIds = userIds.slice(i, i + BATCH_SIZE);
+        const req = {
+          startTime,
+          endTime,
+          page: 1,
+          limit: 10,
+          fields: [],
+          filters: {
+            anchorIds: batchAnchorIds,
+            roomId: ""
+          },
+          orderField: "stat_cost",
+          dimensionFields: [
+            "room_name",
+            "room_id",
+            "aweme_id",
+            "anchor_name",
+            "live_start_time",
+            "live_end_time",
+            "ies_core_user_id",
+            "ies_avatar_url",
+            "live_room_status",
+            "dim_live_ad_promotion_count",
+            "dim_live_ad_count",
+            "ad_delivery_status"
+          ]
+        };
+        const liveResp = await apiService.getLiveRoomList(
+          req,
+          {
+            cookie,
+            csrfToken,
+            groupId: organizationId,
+            accountId
+          }
+        );
+        if (liveResp.code !== 0 || !liveResp.data) {
+          console.warn(
+            `[LiveRoomService] LiveRoomList failed for anchors: ${batchAnchorIds.join(",")}`
+          );
+          continue;
+        }
+        const data = liveResp.data;
+        if (!data || !data.list) {
+          continue;
+        }
+        for (const d of data.list) {
+          if (!d.liveRoomStatus) {
+            continue;
+          }
+          liveData.list.push({
+            user_id: d.iesCoreUserId,
+            unique_id: d.awemeId,
+            nickname: d.anchorName,
+            avatar_thumb: d.avatarUrl,
+            room_id: d.roomId,
+            stream_url: "",
+            status: 2,
+            user_count: 0,
+            promotion_status: d.promotionStatus ? "推广中" : "未推广",
+            start_time: dayjs(d.startTime).unix()
+          });
+          liveData.ies_count++;
+          liveData.pagination.total++;
+        }
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        await sleep(1e4);
+      }
+      console.log(
+        `[LiveRoomService] Account ${accountId} success: ${liveData.list.length} live rooms`
       );
       return {
         accountId,
@@ -1909,8 +2102,10 @@ function waitForElements(selector, includes = undefined, timeout = 10000) {
   debug: {
     enableNetworkDebug: false,
     // 默认关闭网络调试
-    enableSqlDebug: false
+    enableSqlDebug: false,
     // 默认关闭SQL调试
+    enableLiveRoomDebug: false
+    // 默认关闭live调试
   }
 };
 class ConfigManager {
@@ -4871,7 +5066,7 @@ function registerConfigHandlers() {
     const oldConfig = configManager.getConfig();
     const networkDebugChanged = oldConfig.debug?.enableNetworkDebug !== config.debug?.enableNetworkDebug;
     const sqlDebugChanged = oldConfig.debug?.enableSqlDebug !== config.debug?.enableSqlDebug;
-    const LiveRoomDebugChanged = oldConfig.debug?.enableLiveRoomDebug !== config.debug?.enableLiveRoomDebug;
+    const liveRoomDebugChanged = oldConfig.debug?.enableLiveRoomDebug !== config.debug?.enableLiveRoomDebug;
     configManager.saveConfig(config);
     if (networkDebugChanged) {
       apiService.setDebugEnabled(config.debug?.enableNetworkDebug || false);
@@ -4879,7 +5074,7 @@ function registerConfigHandlers() {
     if (sqlDebugChanged) {
       databaseService.setDebugEnabled(config.debug?.enableSqlDebug || false);
     }
-    if (LiveRoomDebugChanged) {
+    if (liveRoomDebugChanged) {
       databaseService.setDebugEnabled(config.debug?.enableLiveRoomDebug || false);
     }
     return { success: true };

@@ -254,8 +254,8 @@ function waitForElements(selector, includes = undefined, timeout = 10000) {
   },
   debug: {
     enableNetworkDebug: false, // 默认关闭网络调试
-    enableSqlDebug: false // 默认关闭SQL调试
-    enableSqlDebug: false // 默认关闭SQL调试
+    enableSqlDebug: false, // 默认关闭SQL调试
+    enableLiveRoomDebug: false // 默认关闭live调试
   }
 }
 

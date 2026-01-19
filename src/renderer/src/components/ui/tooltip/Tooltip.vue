@@ -17,6 +17,7 @@ const props = withDefaults(
 
 const show = ref(false)
 const tooltipRef = ref<HTMLElement>()
+tooltipRef && tooltipRef.value
 
 const handleMouseEnter = (): void => {
   if (!props.disabled && props.content) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineExpose, defineEmits, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Drawer } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
