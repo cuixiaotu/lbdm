@@ -52,6 +52,8 @@ export interface DebugConfig {
   enableNetworkDebug: boolean
   /** SQL调试开关 */
   enableSqlDebug: boolean
+  /** 直播调试开关 */
+  enableLiveRoomDebug: boolean
 }
 
 /**

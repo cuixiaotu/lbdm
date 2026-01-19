@@ -4871,12 +4871,16 @@ function registerConfigHandlers() {
     const oldConfig = configManager.getConfig();
     const networkDebugChanged = oldConfig.debug?.enableNetworkDebug !== config.debug?.enableNetworkDebug;
     const sqlDebugChanged = oldConfig.debug?.enableSqlDebug !== config.debug?.enableSqlDebug;
+    const LiveRoomDebugChanged = oldConfig.debug?.enableLiveRoomDebug !== config.debug?.enableLiveRoomDebug;
     configManager.saveConfig(config);
     if (networkDebugChanged) {
       apiService.setDebugEnabled(config.debug?.enableNetworkDebug || false);
     }
     if (sqlDebugChanged) {
       databaseService.setDebugEnabled(config.debug?.enableSqlDebug || false);
+    }
+    if (LiveRoomDebugChanged) {
+      databaseService.setDebugEnabled(config.debug?.enableLiveRoomDebug || false);
     }
     return { success: true };
   });

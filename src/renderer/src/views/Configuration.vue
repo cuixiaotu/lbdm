@@ -16,7 +16,7 @@ const config = ref<SystemConfig>({
   ssh: { server: '', port: 22, user: '', password: '', useSshKey: false, privateKey: '' },
   account: { loginUrl: '', defaultScript: '' },
   monitor: { interval: 60 }, // 默认60秒
-  debug: { enableNetworkDebug: false, enableSqlDebug: false } // 默认关闭网络调试
+  debug: { enableNetworkDebug: false, enableSqlDebug: false, enableLiveRoomDebug: false } // 默认关闭网络调试
 })
 const isSaving = ref(false)
 const isTesting = ref(false)
@@ -203,7 +203,8 @@ const saveConfig = async (): Promise<void> => {
       },
       debug: {
         enableNetworkDebug: config.value.debug.enableNetworkDebug,
-        enableSqlDebug: config.value.debug.enableSqlDebug
+        enableSqlDebug: config.value.debug.enableSqlDebug,
+        enableLiveRoomDebug: config.value.debug.enableLiveRoomDebug
       }
     }
 
@@ -267,7 +268,8 @@ const testConnection = async (): Promise<void> => {
       },
       debug: {
         enableNetworkDebug: config.value.debug.enableNetworkDebug,
-        enableSqlDebug: config.value.debug.enableSqlDebug
+        enableSqlDebug: config.value.debug.enableSqlDebug,
+        enableLiveRoomDebug: config.value.debug.enableLiveRoomDebug,
       }
     }
 
@@ -337,7 +339,7 @@ const resetConfig = async (): Promise<void> => {
       ssh: { server: '', port: 22, user: '', password: '', useSshKey: false, privateKey: '' },
       account: { loginUrl: '', defaultScript: '' },
       monitor: { interval: 30 },
-      debug: { enableNetworkDebug: false, enableSqlDebug: false }
+      debug: { enableNetworkDebug: false, enableSqlDebug: false, enableLiveRoomDebug: false },
     }
     // 重置后需要重新测试
     isTestPassed.value = false
@@ -766,7 +768,7 @@ const switchToTextMode = (): void => {
             <CardTitle>调试配置</CardTitle>
           </CardHeader>
           <CardContent class="space-y-4">
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
                   <label class="text-sm font-medium leading-none"> 网络请求调试 </label>
@@ -784,6 +786,15 @@ const switchToTextMode = (): void => {
                   </p>
                 </div>
                 <Switch v-model="config.debug.enableSqlDebug" />
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                  <label class="text-sm font-medium leading-none"> 直播列表调试 </label>
+                  <p class="text-xs text-muted-foreground">
+                    开启后将切换到新版直播列表
+                  </p>
+                </div>
+                <Switch v-model="config.debug.enableLiveRoomDebug" />
               </div>
               <div
                 v-if="config.debug.enableNetworkDebug"

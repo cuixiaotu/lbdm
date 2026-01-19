@@ -51,6 +51,8 @@ export interface DebugConfig {
   enableNetworkDebug: boolean
   /** SQL调试开关 */
   enableSqlDebug: boolean
+  /** 直播列表调试开关 */
+  enableLiveRoomDebug: boolean
 }
 
 export interface SystemConfig {
@@ -252,6 +254,7 @@ function waitForElements(selector, includes = undefined, timeout = 10000) {
   },
   debug: {
     enableNetworkDebug: false, // 默认关闭网络调试
+    enableSqlDebug: false // 默认关闭SQL调试
     enableSqlDebug: false // 默认关闭SQL调试
   }
 }

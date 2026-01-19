@@ -75,6 +75,7 @@ function registerConfigHandlers(): void {
     const networkDebugChanged =
       oldConfig.debug?.enableNetworkDebug !== config.debug?.enableNetworkDebug
     const sqlDebugChanged = oldConfig.debug?.enableSqlDebug !== config.debug?.enableSqlDebug
+    const liveRoomDebugChanged = oldConfig.debug?.enableLiveRoomDebug !== config.debug?.enableLiveRoomDebug
 
     // 保存配置
     configManager.saveConfig(config)
@@ -87,6 +88,10 @@ function registerConfigHandlers(): void {
     // 如果SQL调试开关变更，同步更新 databaseService
     if (sqlDebugChanged) {
       databaseService.setDebugEnabled(config.debug?.enableSqlDebug || false)
+    }
+    // 如果直播调试开关变更，同步更新 databaseService
+    if (liveRoomDebugChanged) {
+      databaseService.setDebugEnabled(config.debug?.enableLiveRoomDebug || false)
     }
 
     return { success: true }
