@@ -4,7 +4,7 @@
  */
 
 import { getDatabase } from '../database'
-import { apiService } from './apiService'
+import { apiService, AwemeListInfo, LiveRoomInfo, LiveRoomListRequest } from "./apiService";
 import { accountCacheService } from './accountCacheService'
 import { accountStatusListener } from './accountStatusListener'
 import type {
@@ -20,6 +20,7 @@ import type {
   LiveRoomCommentData
 } from './apiService'
 import { BrowserWindow, dialog } from 'electron'
+import dayjs from "dayjs";
 
 /**
  * 账户直播间数据
@@ -203,6 +204,188 @@ export class LiveRoomService {
         accountName,
         organizationId,
         liveData: liveData,
+        lastUpdate: Date.now(),
+        success: true
+      }
+    } catch (error) {
+      console.error(`[LiveRoomService] Account ${accountId} exception:`, error)
+      return {
+        accountId,
+        accountName,
+        organizationId,
+        liveData: null,
+        lastUpdate: Date.now(),
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * 获取单个账户的直播间列表
+   */
+  private async fetchAccountLiveRoomsV2(
+    accountId: number,
+    accountName: string,
+    organizationId: string,
+    cookie: string,
+    csrfToken: string
+  ): Promise<AccountLiveRooms> {
+    try {
+      console.log(
+        `[LiveRoomService] Fetching live roomsV2 for account ${accountId} (${accountName})`
+      )
+
+      /** Step 1：获取 aweme 列表（主播来源） */
+      const awemeResp = await apiService.getAwemeList(
+        undefined,
+        {
+          cookie,
+          csrfToken,
+          groupId: organizationId,
+          accountId
+        }
+      )
+
+      if (awemeResp.code !== 0) {
+        await this.handleApiFailure(accountId, accountName, awemeResp.code)
+        return {
+          accountId,
+          accountName,
+          organizationId,
+          liveData: null,
+          lastUpdate: Date.now(),
+          success: false,
+          error: awemeResp.msg
+        }
+      }
+
+      const awemeData = awemeResp.data
+      if (!awemeData || !awemeData.list?.length) {
+        return {
+          accountId,
+          accountName,
+          organizationId,
+          liveData: null,
+          lastUpdate: Date.now(),
+          success: false,
+          error: 'No aweme data'
+        }
+      }
+
+      /** Step 2：初始化 LiveIESListData */
+      const liveData: LiveIESListData = {
+        list: [],
+        overview: {
+          line_online_count: 0,
+          promotion_count: 0,
+          cumulative_views_count: 0,
+          avg_views_count: 0
+        },
+        ies_count: 0,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0
+        }
+      }
+
+      /** Step 3：抽取 userIds */
+      const userIds = awemeData.list
+        .map((item: AwemeListInfo) => item.userId)
+        .filter(Boolean)
+
+      /** Step 4：按 10 个一批查询直播间 */
+      const BATCH_SIZE = 10
+
+      const startTime = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')
+      const endTime = startTime
+
+      for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+        const batchAnchorIds = userIds.slice(i, i + BATCH_SIZE)
+        const req: LiveRoomListRequest = {
+          startTime,
+          endTime,
+          page: 1,
+          limit: 10,
+          fields: [],
+          filters: {
+            anchorIds: batchAnchorIds,
+            roomId: ""
+          },
+          orderField: "stat_cost",
+          dimensionFields: [
+            "room_name",
+            "room_id",
+            "aweme_id",
+            "anchor_name",
+            "live_start_time",
+            "live_end_time",
+            "ies_core_user_id",
+            "ies_avatar_url",
+            "live_room_status",
+            "dim_live_ad_promotion_count",
+            "dim_live_ad_count",
+            "ad_delivery_status"
+          ]
+        }
+
+        const liveResp = await apiService.getLiveRoomList(
+          req,
+          {
+            cookie,
+            csrfToken,
+            groupId: organizationId,
+            accountId
+          }
+        )
+
+        if (liveResp.code !== 0 || !liveResp.data) {
+          console.warn(
+            `[LiveRoomService] LiveRoomList failed for anchors: ${batchAnchorIds.join(',')}`
+          )
+          continue
+        }
+
+        const data = liveResp.data
+        if (!data || !data.list) {
+          continue
+        }
+
+        for (const d of data.list) {
+          if (!d.liveRoomStatus){
+            continue
+          }
+          liveData.list.push({
+            user_id: d.iesCoreUserId,
+            unique_id: d.awemeId,
+            nickname: d.anchorName,
+            avatar_thumb: d.avatarUrl,
+            room_id: d.roomId,
+            stream_url: "",
+            status: 2,
+            user_count: 0,
+            promotion_status: d.promotionStatus? "推广中":"未推广",
+            start_time: dayjs(d.startTime).unix(),
+          } as LiveRoomInfo);
+          liveData.ies_count++
+          liveData.pagination.total++
+        }
+
+        const sleep = (ms: number): Promise<void> =>
+          new Promise((resolve) => setTimeout(resolve, ms));
+        await sleep(10000)
+      }
+
+      console.log(
+        `[LiveRoomService] Account ${accountId} success: ${liveData.list.length} live rooms`
+      )
+
+      return {
+        accountId,
+        accountName,
+        organizationId,
+        liveData,
         lastUpdate: Date.now(),
         success: true
       }

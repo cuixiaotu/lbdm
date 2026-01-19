@@ -78,6 +78,107 @@ export interface LiveIESListRequest {
 }
 
 /**
+ * 直播列表V2请求参数
+ */
+export interface LiveRoomListRequest {
+  /** 直播开始时间 格式: 2026-01-19 */
+  startTime: string
+  /** 直播结束时间 */
+  endTime: string
+  /** 页码 */
+  page: number
+  /** 每页数量 */
+  limit: number
+  /** 过滤类型 */
+  fields: string[]
+  /** 过滤类型 */
+  filters: {
+    /** 用户ID数组 */
+    anchorIds: string[],
+    /** 直播房间号 */
+    roomId: string
+  }
+  /** 排序字段 */
+  orderField: string
+  /** 指标字段 */
+  dimensionFields: string[]
+}
+
+/**
+ * 直播列表V2返回数据
+ */
+export interface LiveRoomListData {
+  /** 直播间列表 */
+  list: LiveRoomListInfo[]
+  /** 总直播间数量 */
+  total: number
+}
+
+/**
+ * 直播间信息
+ */
+export interface LiveRoomListInfo {
+  /** 直播房间名 */
+  roomName: string
+  /** 直播房间ID */
+  roomId: string
+  /** 昵称 */
+  anchorName: string
+  /** 头像URL */
+  avatarUrl: string
+  /** 抖音用户Id */
+  awemeId: string
+  /** ies用户ID */
+  iesCoreUserId: string
+  /** 推广数 */
+  promotionCount: number
+  /** 广告数 */
+  adCount: number
+  /** 推广状态 */
+  promotionStatus: boolean
+  /** 直播开始时间 */
+  startTime: string
+  /** 直播结束时间 */
+  endTime: string
+  /** 直播状态 */
+  liveRoomStatus: boolean
+  /** 统计字段 */
+  fields: Record<string, string>
+}
+
+
+/**
+ * 抖音用户列表请求参数
+ */
+export interface AwemeListRequest {
+}
+
+/**
+ * 抖音用户列表返回数据
+ */
+export interface AwemeListData {
+  /** 直播间列表 */
+  list: AwemeListInfo[]
+  /** 总直播间数量 */
+  total: number
+}
+
+/**
+ * 抖音用户信息
+ */
+export interface AwemeListInfo {
+  /** 用户名 */
+  nickName: string
+  /** 抖音ID */
+  awemeId: string
+  /** 用户ID */
+  userId: string
+}
+
+
+
+
+/**
  * 直播间指标数据
  */
 export interface LiveMetrics {
@@ -712,6 +813,56 @@ export class ApiService {
     return response
   }
 
+  /**
+   * 获取有权限的抖音列表
+   * @param groupId 组织ID
+   * @param requestData 请求参数
+   * @param config API请求配置
+   */
+  async getAwemeList(
+    requestData: undefined,
+    config: ApiRequestConfig
+  ): Promise<ApiResponse<AwemeListData>> {
+    const url = `/bp/api/analysis/operate/get_aweme_list`
+    const headers = this.buildHeaders(
+      config.cookie,
+      config.csrfToken,
+      `https://business.oceanengine.com/site/analysis/scenes/live`
+    )
+    const response = await this.makeRequest<AwemeListData>(
+      'POST',
+      url,
+      headers,
+      requestData,
+      config.timeout
+    )
+
+    await this.validateResponse(response, config)
+    return response
+  }
+
+  async getLiveRoomList(
+    requestData: LiveRoomListRequest,
+    config: ApiRequestConfig
+  ): Promise<ApiResponse<LiveRoomListData>> {
+    const url = `/bp/api/analysis/operate/get_room_list`
+    const headers = this.buildHeaders(
+      config.cookie,
+      config.csrfToken,
+      `https://business.oceanengine.com/site/analysis/scenes/live`
+    )
+    const response = await this.makeRequest<LiveRoomListData>(
+      'POST',
+      url,
+      headers,
+      requestData,
+      config.timeout
+    )
+
+    await this.validateResponse(response, config)
+
+    return response
+  }
   /**
    * 获取直播间在线人数
    * @param requestData 请求参数
