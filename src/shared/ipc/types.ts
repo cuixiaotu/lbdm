@@ -659,6 +659,10 @@ export interface IPCTypeMap {
     request: { accountId: number }
     response: AccountLiveRooms | null
   }
+  'live-room:force-refresh-account': {
+    request: { accountId: number }
+    response: AccountLiveRooms | null
+  }
   'live-room:get-statistics': {
     request: void
     response: LiveRoomStatistics

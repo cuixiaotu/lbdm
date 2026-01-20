@@ -108,6 +108,7 @@ const forceRefreshLiveRooms = async (): Promise<void> => {
     error.value = ''
 
     const data = await window.api.liveRoom.refreshAccountForce(props.accountId)
+    //const data = await (window.api.liveRoom as any)?.refreshAccountForce(props.accountId)
     liveRoomData.value = data
 
     if (!data || !data.success) {

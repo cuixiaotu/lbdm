@@ -82,7 +82,7 @@ export const LIVE_ROOM_CHANNELS = {
   /** 刷新指定账户的直播间数据 */
   REFRESH_ACCOUNT: 'live-room:refresh-account',
   /** 强制刷新指定账户的直播间数据 */
-  FORCE_REFRESH_ACCOUNT: 'live-room:force_refresh-account',
+  FORCE_REFRESH_ACCOUNT: 'live-room:force-refresh-account',
   /** 直播间数据更新（事件） */
   UPDATED: 'live-room:updated',
   /** 获取统计信息 */
