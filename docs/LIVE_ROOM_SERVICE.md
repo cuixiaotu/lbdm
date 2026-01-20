@@ -177,6 +177,15 @@ const refreshAccount = async (accountId: number) => {
     // 刷新后会自动触发 onUpdated 回调
   }
 }
+
+// 刷新指定账户的直播间数据
+const refreshAccountForce = async (accountId: number) => {
+  const accountData = await window.api.liveRoom.refreshAccountForce(accountId)
+  if (accountData && accountData.success) {
+    console.log(`账户 ${accountId} 刷新成功`)
+    // 刷新后会自动触发 onUpdated 回调
+  }
+}
 ```
 
 ### 5. 获取统计信息
@@ -510,6 +519,9 @@ class LiveRoomService {
 
   // 手动刷新指定账户
   refreshAccount(accountId: number): Promise<AccountLiveRooms | null>
+  
+  // 手动刷新指定账户
+  refreshAccountForce(accountId: number): Promise<AccountLiveRooms | null>
 
   // 清空缓存
   clearCache(): void
@@ -539,6 +551,9 @@ interface LiveRoomAPI {
 
   // 刷新指定账户的直播间数据
   refreshAccount(accountId: number): Promise<AccountLiveRooms | null>
+  
+  // 强制刷新指定账户的直播间数据
+  refreshAccountForce(accountId: number): Promise<AccountLiveRooms | null>
 
   // 获取统计信息
   getStatistics(): Promise<LiveRoomStatistics>

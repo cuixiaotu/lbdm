@@ -420,9 +420,9 @@ export class LiveRoomService {
       }
 
       // 直接调用 API 获取直播间列表，根据结果判断凭证是否有效
-      const config = configManager.getConfig()
+      //const config = configManager.getConfig()
       let liveRoomData
-      if (config.debug.enableLiveRoomDebug && newVesion) {
+      if (newVesion) {
         liveRoomData = await this.fetchAccountLiveRoomsV2(
           account.id,
           account.account_name,
