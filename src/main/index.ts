@@ -195,6 +195,7 @@ app.on('before-quit', () => {
 
   // 销毁托盘
   disposeAppTray()
+  app.exit(0);
 })
 
 /**

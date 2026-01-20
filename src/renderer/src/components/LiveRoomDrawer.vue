@@ -107,34 +107,6 @@ const forceRefreshLiveRooms = async (): Promise<void> => {
     loading.value = true
     error.value = ''
 
-    const data = await window.api.liveRoom.refreshAccountForce(props.accountId)
-    liveRoomData.value = data
-
-    if (!data || !data.success) {
-      error.value = data?.error || '刷新直播间列表失败'
-      showError(error.value)
-    } else {
-      showSuccess('直播间列表已刷新')
-    }
-  } catch (err) {
-    console.error('刷新直播间列表失败:', err)
-    error.value = '刷新失败，请重试'
-    showError('无法刷新直播间列表，请重试')
-  } finally {
-    loading.value = false
-  }
-}
-
-/**
- * 刷新直播间数据
- */
-const refreshLiveRooms = async (): Promise<void> => {
-  if (!props.accountId) return
-
-  try {
-    loading.value = true
-    error.value = ''
-
     const data = await window.api.liveRoom.refreshAccount(props.accountId)
     liveRoomData.value = data
 
@@ -152,6 +124,34 @@ const refreshLiveRooms = async (): Promise<void> => {
     loading.value = false
   }
 }
+
+// /**
+//  * 刷新直播间数据
+//  */
+// const refreshLiveRooms = async (): Promise<void> => {
+//   if (!props.accountId) return
+//
+//   try {
+//     loading.value = true
+//     error.value = ''
+//
+//     const data = await window.api.liveRoom.refreshAccount(props.accountId)
+//     liveRoomData.value = data
+//
+//     if (!data || !data.success) {
+//       error.value = data?.error || '刷新直播间列表失败'
+//       showError(error.value)
+//     } else {
+//       showSuccess('直播间列表已刷新')
+//     }
+//   } catch (err) {
+//     console.error('刷新直播间列表失败:', err)
+//     error.value = '刷新失败，请重试'
+//     showError('无法刷新直播间列表，请重试')
+//   } finally {
+//     loading.value = false
+//   }
+// }
 
 /**
  * 添加到监听队列
