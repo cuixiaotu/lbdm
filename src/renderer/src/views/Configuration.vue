@@ -789,9 +789,9 @@ const switchToTextMode = (): void => {
               </div>
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
-                  <label class="text-sm font-medium leading-none"> 直播列表调试 </label>
+                  <label class="text-sm font-medium leading-none"> 直播列表新版调试 </label>
                   <p class="text-xs text-muted-foreground">
-                    开启后将切换到新版直播列表
+                    开启后切换新版直播列表
                   </p>
                 </div>
                 <Switch v-model="config.debug.enableLiveRoomDebug" />

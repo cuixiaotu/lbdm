@@ -144,6 +144,10 @@ const api = {
       ipcRenderer.invoke(LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT, { accountId }) as Promise<
         IPCTypeMap['live-room:refresh-account']['response']
       >,
+    refreshAccountForce: (accountId: number) =>
+      ipcRenderer.invoke(LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT, { accountId }) as Promise<
+        IPCTypeMap['live-room:refresh-account']['response']
+      >,
     getStatistics: () =>
       ipcRenderer.invoke(LIVE_ROOM_CHANNELS.GET_STATISTICS) as Promise<
         IPCTypeMap['live-room:get-statistics']['response']

@@ -171,7 +171,6 @@ const handleAccountSaved = async (): Promise<void> => {
  * 删除账户
  */
 const handleDelete = async (account: AccountDisplay): Promise<void> => {
-  if (!canDelete(account.isValid)) return
 
   try {
     // 确认删除
@@ -332,7 +331,6 @@ const refreshList = async (): Promise<void> => {
 
                   <!-- 删除 -->
                   <button
-                    v-if="canDelete(account.isValid)"
                     class="inline-flex items-center gap-0.5 text-xs text-destructive hover:text-destructive/80 transition-colors"
                     @click="handleDelete(account)"
                   >

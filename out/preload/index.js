@@ -60,6 +60,8 @@ const LIVE_ROOM_CHANNELS = {
   REFRESH: "live-room:refresh",
   /** 刷新指定账户的直播间数据 */
   REFRESH_ACCOUNT: "live-room:refresh-account",
+  /** 强制刷新指定账户的直播间数据 */
+  FORCE_REFRESH_ACCOUNT: "live-room:force_refresh-account",
   /** 直播间数据更新（事件） */
   UPDATED: "live-room:updated",
   /** 获取统计信息 */
@@ -185,6 +187,7 @@ const api = {
     getByAccount: (accountId) => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.GET_BY_ACCOUNT, { accountId }),
     refresh: () => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.REFRESH),
     refreshAccount: (accountId) => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT, { accountId }),
+    refreshAccountForce: (accountId) => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT, { accountId }),
     getStatistics: () => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.GET_STATISTICS),
     getAttributes: (accountId, roomIds, attributes) => electron.ipcRenderer.invoke(LIVE_ROOM_CHANNELS.GET_ATTRIBUTES, {
       accountId,

@@ -479,6 +479,7 @@ function registerLiveRoomHandlers(): void {
   try {
     ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_BY_ACCOUNT)
     ipcMain.removeHandler(LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT)
+    ipcMain.removeHandler(LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT)
     ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_ATTRIBUTES)
     ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_FLOW_LIST)
     ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_USER_IMAGE)
@@ -500,6 +501,12 @@ function registerLiveRoomHandlers(): void {
     LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT,
     async (_, { accountId }: { accountId: number }): Promise<AccountLiveRooms | null> => {
       return await liveRoomService.getLiveRoomsByAccountId(accountId)
+    }
+  )
+  ipcMain.handle(
+    LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT,
+    async (_, { accountId }: { accountId: number }): Promise<AccountLiveRooms | null> => {
+      return await liveRoomService.getLiveRoomsByAccountId(accountId,true)
     }
   )
 

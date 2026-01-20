@@ -4,7 +4,7 @@
  */
 
 import { getDatabase } from '../database'
-import { apiService, AwemeListInfo, LiveRoomInfo, LiveRoomListRequest } from "./apiService";
+import { apiService, AwemeListInfo, LiveOverview, LiveRoomInfo, LiveRoomListRequest } from "./apiService";
 import { accountCacheService } from './accountCacheService'
 import { accountStatusListener } from './accountStatusListener'
 import type {
@@ -21,6 +21,7 @@ import type {
 } from './apiService'
 import { BrowserWindow, dialog } from 'electron'
 import dayjs from "dayjs";
+import { configManager } from "../config/configManager";
 
 /**
  * 账户直播间数据
@@ -269,7 +270,7 @@ export class LiveRoomService {
           liveData: null,
           lastUpdate: Date.now(),
           success: false,
-          error: 'No aweme data'
+          error: '获取抖音号列表异常'
         }
       }
 
@@ -297,9 +298,8 @@ export class LiveRoomService {
 
       /** Step 4：按 10 个一批查询直播间 */
       const BATCH_SIZE = 10
-
-      const startTime = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')
-      const endTime = startTime
+      const startTime = dayjs().format("YYYY-MM-DD");
+      const endTime = startTime;
 
       for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
         const batchAnchorIds = userIds.slice(i, i + BATCH_SIZE)
@@ -307,7 +307,7 @@ export class LiveRoomService {
           startTime,
           endTime,
           page: 1,
-          limit: 10,
+          limit: 20,
           fields: [],
           filters: {
             anchorIds: batchAnchorIds,
@@ -368,15 +368,16 @@ export class LiveRoomService {
             promotion_status: d.promotionStatus? "推广中":"未推广",
             start_time: dayjs(d.startTime).unix(),
           } as LiveRoomInfo);
-          liveData.ies_count++
+          liveData.overview.line_online_count++
+          if (d.promotionStatus){
+            liveData.overview.promotion_count++
+          }
           liveData.pagination.total++
         }
-
         const sleep = (ms: number): Promise<void> =>
           new Promise((resolve) => setTimeout(resolve, ms));
-        await sleep(10000)
+        await sleep(2000)
       }
-
       console.log(
         `[LiveRoomService] Account ${accountId} success: ${liveData.list.length} live rooms`
       )
@@ -407,7 +408,7 @@ export class LiveRoomService {
    * 获取指定账户的直播间数据（直接调用 API，根据结果返回）
    * 成功获取数据后会自动缓存到 accountCacheService
    */
-  async getLiveRoomsByAccountId(accountId: number): Promise<AccountLiveRooms | null> {
+  async getLiveRoomsByAccountId(accountId: number, newVesion: boolean = false): Promise<AccountLiveRooms | null> {
     try {
       const db = getDatabase()
       const accountsTable = db.getAccountsTable()
@@ -419,13 +420,25 @@ export class LiveRoomService {
       }
 
       // 直接调用 API 获取直播间列表，根据结果判断凭证是否有效
-      const liveRoomData = await this.fetchAccountLiveRooms(
-        account.id,
-        account.account_name,
-        account.organization_id,
-        account.cookie,
-        account.csrf_token
-      )
+      const config = configManager.getConfig()
+      let liveRoomData
+      if (config.debug.enableLiveRoomDebug && newVesion) {
+        liveRoomData = await this.fetchAccountLiveRoomsV2(
+          account.id,
+          account.account_name,
+          account.organization_id,
+          account.cookie,
+          account.csrf_token
+        )
+      }else {
+        liveRoomData = await this.fetchAccountLiveRooms(
+          account.id,
+          account.account_name,
+          account.organization_id,
+          account.cookie,
+          account.csrf_token
+        )
+      }
 
       // 如果成功获取数据，则缓存到 accountCacheService
       if (liveRoomData && liveRoomData.success && liveRoomData.liveData) {

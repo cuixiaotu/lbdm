@@ -100,6 +100,34 @@ const loadLiveRooms = async (): Promise<void> => {
 /**
  * 刷新直播间数据
  */
+const forceRefreshLiveRooms = async (): Promise<void> => {
+  if (!props.accountId) return
+
+  try {
+    loading.value = true
+    error.value = ''
+
+    const data = await window.api.liveRoom.refreshAccountForce(props.accountId)
+    liveRoomData.value = data
+
+    if (!data || !data.success) {
+      error.value = data?.error || '刷新直播间列表失败'
+      showError(error.value)
+    } else {
+      showSuccess('直播间列表已刷新')
+    }
+  } catch (err) {
+    console.error('刷新直播间列表失败:', err)
+    error.value = '刷新失败，请重试'
+    showError('无法刷新直播间列表，请重试')
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * 刷新直播间数据
+ */
 const refreshLiveRooms = async (): Promise<void> => {
   if (!props.accountId) return
 
@@ -266,11 +294,16 @@ watch(
             最后更新: {{ new Date(liveRoomData.lastUpdate).toLocaleString('zh-CN') }}
           </span>
         </div>
-        <Button variant="outline" :disabled="loading" @click="refreshLiveRooms">
+        <Button variant="outline" :disabled="loading" @click="forceRefreshLiveRooms">
           <RefreshCw :class="{ 'animate-spin': loading }" class="w-4 h-4 mr-2" />
           <span v-if="loading">刷新中...</span>
           <span v-else>刷新</span>
         </Button>
+<!--        <Button variant="outline" :disabled="loading" @click="forceRefreshLiveRooms">-->
+<!--          <RefreshCw :class="{ 'animate-spin': loading }" class="w-4 h-4 mr-2" />-->
+<!--          <span v-if="loading">刷新中...</span>-->
+<!--          <span v-else>强制刷新</span>-->
+<!--        </Button>-->
       </div>
 
       <!-- 直播间表格 -->

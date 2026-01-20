@@ -1392,7 +1392,7 @@ class LiveRoomService {
           liveData: null,
           lastUpdate: Date.now(),
           success: false,
-          error: "No aweme data"
+          error: "获取抖音号列表异常"
         };
       }
       const liveData = {
@@ -1412,7 +1412,7 @@ class LiveRoomService {
       };
       const userIds = awemeData.list.map((item) => item.userId).filter(Boolean);
       const BATCH_SIZE = 10;
-      const startTime = (/* @__PURE__ */ new Date()).toLocaleDateString("zh-CN").replace(/\//g, "-");
+      const startTime = dayjs().format("YYYY-MM-DD");
       const endTime = startTime;
       for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
         const batchAnchorIds = userIds.slice(i, i + BATCH_SIZE);
@@ -1420,7 +1420,7 @@ class LiveRoomService {
           startTime,
           endTime,
           page: 1,
-          limit: 10,
+          limit: 20,
           fields: [],
           filters: {
             anchorIds: batchAnchorIds,
@@ -1477,11 +1477,14 @@ class LiveRoomService {
             promotion_status: d.promotionStatus ? "推广中" : "未推广",
             start_time: dayjs(d.startTime).unix()
           });
-          liveData.ies_count++;
+          liveData.overview.line_online_count++;
+          if (d.promotionStatus) {
+            liveData.overview.promotion_count++;
+          }
           liveData.pagination.total++;
         }
         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-        await sleep(1e4);
+        await sleep(2e3);
       }
       console.log(
         `[LiveRoomService] Account ${accountId} success: ${liveData.list.length} live rooms`
@@ -1511,7 +1514,7 @@ class LiveRoomService {
    * 获取指定账户的直播间数据（直接调用 API，根据结果返回）
    * 成功获取数据后会自动缓存到 accountCacheService
    */
-  async getLiveRoomsByAccountId(accountId) {
+  async getLiveRoomsByAccountId(accountId, newVesion = false) {
     try {
       const db = getDatabase();
       const accountsTable = db.getAccountsTable();
@@ -1520,13 +1523,25 @@ class LiveRoomService {
         console.error(`[LiveRoomService] Account ${accountId} not found`);
         return null;
       }
-      const liveRoomData = await this.fetchAccountLiveRooms(
-        account.id,
-        account.account_name,
-        account.organization_id,
-        account.cookie,
-        account.csrf_token
-      );
+      const config = configManager.getConfig();
+      let liveRoomData;
+      if (config.debug.enableLiveRoomDebug && newVesion) {
+        liveRoomData = await this.fetchAccountLiveRoomsV2(
+          account.id,
+          account.account_name,
+          account.organization_id,
+          account.cookie,
+          account.csrf_token
+        );
+      } else {
+        liveRoomData = await this.fetchAccountLiveRooms(
+          account.id,
+          account.account_name,
+          account.organization_id,
+          account.cookie,
+          account.csrf_token
+        );
+      }
       if (liveRoomData && liveRoomData.success && liveRoomData.liveData) {
         console.log(
           `[LiveRoomService] Caching live rooms data for account ${accountId}, count: ${liveRoomData.liveData.list.length}`
@@ -4993,6 +5008,8 @@ const LIVE_ROOM_CHANNELS = {
   REFRESH: "live-room:refresh",
   /** 刷新指定账户的直播间数据 */
   REFRESH_ACCOUNT: "live-room:refresh-account",
+  /** 强制刷新指定账户的直播间数据 */
+  FORCE_REFRESH_ACCOUNT: "live-room:force_refresh-account",
   /** 直播间数据更新（事件） */
   UPDATED: "live-room:updated",
   /** 获取统计信息 */
@@ -5364,6 +5381,7 @@ function registerLiveRoomHandlers() {
   try {
     electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_BY_ACCOUNT);
     electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT);
+    electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT);
     electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_ATTRIBUTES);
     electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_FLOW_LIST);
     electron.ipcMain.removeHandler(LIVE_ROOM_CHANNELS.GET_USER_IMAGE);
@@ -5380,6 +5398,12 @@ function registerLiveRoomHandlers() {
     LIVE_ROOM_CHANNELS.REFRESH_ACCOUNT,
     async (_, { accountId }) => {
       return await liveRoomService.getLiveRoomsByAccountId(accountId);
+    }
+  );
+  electron.ipcMain.handle(
+    LIVE_ROOM_CHANNELS.FORCE_REFRESH_ACCOUNT,
+    async (_, { accountId }) => {
+      return await liveRoomService.getLiveRoomsByAccountId(accountId, true);
     }
   );
   electron.ipcMain.handle(
